@@ -1,0 +1,19 @@
+﻿{
+    "defaultCacheTimeout": "60",
+    "adapters": [
+        {
+            "id": "xml-sample",
+            "url": "~/Content/cctray.xml",
+            "username": "",
+            "password": "",
+            "type": "SampleCCTrayAdapter"
+        },
+        {
+            "id": "json-sample",
+            "url": "~/Content/cctray.json",
+            "username": "",
+            "password": "",
+            "type": "SampleCCTrayAdapter"
+        },
+    ]
+}

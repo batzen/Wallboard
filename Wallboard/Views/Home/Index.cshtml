@@ -1,0 +1,116 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="row" data-bind="foreach: projects">
+    <div class="col-md-3">
+        <div>
+            <div class="truncate"><span class="badge"><!--ko text: Total--><!--/ko--></span>&nbsp;<!--ko text: Name--><!--/ko--></div>
+
+            <div class="progress" style="margin-bottom: 0">
+                <div class="progress-bar progress-bar-success" data-bind="style: { width: SuccessfulPercent() + '%' }">
+                    <span><!--ko text: Successful--><!--/ko--></span>
+                </div>
+                <div class="progress-bar progress-bar-danger" data-bind="style: { width: FailedPercent() + '%' }">
+                    <span><!--ko text: Failed--><!--/ko--></span>
+                </div>
+                <div class="progress-bar progress-bar-warning progress-bar-striped" data-bind="style: { width: RunningPercent() + '%' }">
+                    <span><!--ko text: Running--><!--/ko--></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/knockout/knockout.js"></script>
+    <script src="~/lib/knockout.mapping/knockout.mapping.js"></script>
+    <script src="~/lib/signalr/jquery.signalR.js"></script>
+    <script src="~/signalr/hubs"></script>
+
+    <script type="text/javascript">
+        var vm = null;
+
+        $(function() {
+            vm = new ProjectsViewModel();
+            ko.applyBindings(vm);
+
+            var projectsHubProxy = $.connection.projects;
+
+            projectsHubProxy.client.updateProjects = function(data) {
+                $.each(data, function () {
+                    var project = ko.mapping.fromJS(this, ProjectMapping);
+                    console.log(project.Name());
+                    console.log(project.Successful());
+                    console.log(project.Failed());
+                    console.log(project.Running());
+
+                    var match = ko.utils.arrayFirst(vm.projects(), function(item) {
+                        return project.Id() === item.Id();
+                    });
+
+                    if (!match) {
+                        vm.projects.push(project);
+                    } else {
+                        ko.mapping.fromJS(this, match);
+                    }
+                });
+            };
+
+            projectsHubProxy.client.removeProject = function(data) {
+                var project = ko.mapping.fromJS(data, ProjectMapping);
+                console.log(project.Name());
+
+                var match = ko.utils.arrayFirst(vm.projects(), function(item) {
+                    return project.Id() === item.Id();
+                });
+
+                if (match) {
+                    vm.projects.remove(match);
+                }
+            };
+
+            function initProjects() {
+                return projectsHubProxy.server.getProjects().done(function(projects) {
+                    vm.projects.removeAll();
+                    $.each(projects, function() {
+                        var project = ko.mapping.fromJS(this, ProjectMapping);
+                        console.log(project.Name());
+                        console.log(project.Successful());
+                        console.log(project.Failed());
+                        console.log(project.Running());
+                        vm.addProject(project);
+                    });
+                });
+            }
+
+            $.connection.hub.start()
+                .done(function() { console.log('Now connected, connection ID=' + $.connection.hub.id); })
+                .fail(function() { console.log('Could not Connect!'); })
+                .pipe(initProjects);
+        });
+
+        function ProjectsViewModel() {
+            var self = this;
+            //self.projects = ko.observableArray([]);
+            self.projects = ko.mapping.fromJS([]);
+
+            self.addProject = function(item) {
+                self.projects.push(item);
+            };
+        }
+
+        var ProjectMapping = {
+            key: function(item) {
+                return ko.utils.unwrapObservable(item.id);
+            },
+            create: function(options) {
+                return new Project(options.data);
+            }
+        }
+
+        var Project = function(data) {
+            ko.mapping.fromJS(data, {}, this);
+        };
+    </script>
+}

@@ -1,0 +1,38 @@
+﻿{    
+    "adapters": [
+        {
+            "id": "xml-sample",
+            "url": "~/Content/cctray.xml",
+            "username": "",
+            "password": "",
+            "type": "SampleCCTrayAdapter",
+            "cacheDuration": 5000,
+            "enabled":  "true"
+        },
+        {
+            "id": "json-sample",
+            "url": "~/Content/cctray.json",
+            "username": "",
+            "password": "",
+            "type": "SampleCCTrayAdapter",
+            "cacheDuration": 5000,
+            "enabled":  "true"
+        },
+        {
+            "id": "jetbrains.teamcity",
+            "url": "https://teamcity.jetbrains.com/httpAuth/app/rest/cctray",
+            "username": "guest",
+            "password": "",
+            "type": "CCTrayAdapter",
+            "enabled":  "false"
+        },
+        {
+            "id": "jenkins",
+            "url": "https://builds.apache.org/cc.xml",
+            "username": "",
+            "password": "",
+            "type": "CCTrayAdapter",
+            "enabled":  "false"
+        }
+    ]
+}

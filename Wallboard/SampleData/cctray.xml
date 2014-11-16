@@ -1,0 +1,22 @@
+﻿<Projects>
+  <Project webUrl="https://builds.apache.org/job/Qpid-Java-Java-BDB-TestMatrix/" name="Qpid-Java-Java-BDB-TestMatrix" lastBuildLabel="1599" lastBuildTime="2014-11-12T19:37:33Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/Ambari-trunk-find-patches-available/" name="Ambari-trunk-find-patches-available" lastBuildLabel="5206" lastBuildTime="2014-11-12T22:03:25Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/oozie-trunk-find-patches-available/" name="oozie-trunk-find-patches-available" lastBuildLabel="81235" lastBuildTime="2014-11-12T22:03:13Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/oozie-trunk-precommit-build/" name="oozie-trunk-precommit-build" lastBuildLabel="2091" lastBuildTime="2014-11-12T20:19:16Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/incubator-brooklyn-pull-requests/" name="incubator-brooklyn-pull-requests" lastBuildLabel="320" lastBuildTime="2014-11-12T21:54:46Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/PreCommit-MAPREDUCE-Build/" name="PreCommit-MAPREDUCE-Build" lastBuildLabel="5014" lastBuildTime="2014-11-12T21:30:22Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/DeltaSpike%20Weld%202.2.4/" name="DeltaSpike Weld 2.2.4" lastBuildLabel="58" lastBuildTime="2014-11-12T21:51:45Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/Lucene-Artifacts-5.x/" name="Lucene-Artifacts-5.x" lastBuildLabel="682" lastBuildTime="2014-11-12T21:50:43Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/PreCommit-Admin/" name="PreCommit-Admin" lastBuildLabel="184764" lastBuildTime="2014-11-12T22:00:01Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/bookkeeper-trunk-find-patches-available/" name="bookkeeper-trunk-find-patches-available" lastBuildLabel="72999" lastBuildTime="2014-11-12T22:00:01Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/Blur-master-jdk7-hadoop2-mr1/" name="Blur-master-jdk7-hadoop2-mr1" lastBuildLabel="539" lastBuildTime="2014-11-12T21:27:25Z" lastBuildStatus="Failure" activity="Building"/>
+  <Project webUrl="https://builds.apache.org/job/Camel.trunk.fulltest.java7/" name="Camel.trunk.fulltest.java7" lastBuildLabel="973" lastBuildTime="2014-11-12T18:00:25Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/HBase-0.98/" name="HBase-0.98" lastBuildLabel="671" lastBuildTime="2014-11-12T20:12:07Z" lastBuildStatus="Success" activity="Building"/>
+  <Project webUrl="https://builds.apache.org/job/DeltaSpike%20Weld%202.0.0.SP1/" name="DeltaSpike Weld 2.0.0.SP1" lastBuildLabel="270" lastBuildTime="2014-11-12T21:45:56Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/Camel.2.14.x.fulltest/" name="Camel.2.14.x.fulltest" lastBuildLabel="62" lastBuildTime="2014-11-12T18:00:19Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/cloudstack-master-maven/" name="cloudstack-master-maven" lastBuildLabel="4398" lastBuildTime="2014-11-12T21:51:19Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/PreCommit-HIVE-Build/" name="PreCommit-HIVE-Build" lastBuildLabel="4584" lastBuildTime="2014-11-12T21:54:37Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/cloudstack-rat-master/" name="cloudstack-rat-master" lastBuildLabel="5785" lastBuildTime="2014-11-12T21:53:55Z" lastBuildStatus="Success" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/maven-surefire-mvn-2.2.1/" name="maven-surefire-mvn-2.2.1" lastBuildLabel="1488" lastBuildTime="2014-11-12T21:52:55Z" lastBuildStatus="Failure" activity="Sleeping"/>
+  <Project webUrl="https://builds.apache.org/job/Blur-master-jdk6/" name="Blur-master-jdk6" lastBuildLabel="897" lastBuildTime="2014-11-12T21:30:43Z" lastBuildStatus="Failure" activity="Sleeping"/>
+</Projects>
