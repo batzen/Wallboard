@@ -2,7 +2,7 @@
     ViewBag.Title = "Home Page";
 }
 
-<div class="row" data-bind="foreach: projects">
+<div class="row" data-bind="foreach: sortedProjects">
     <div class="col-md-3">
         <div>
             <div class="truncate"><span class="badge"><!--ko text: Total--><!--/ko--></span>&nbsp;<!--ko text: Name--><!--/ko--></div>
@@ -37,48 +37,60 @@
 
             var projectsHubProxy = $.connection.projects;
 
-            projectsHubProxy.client.updateProjects = function(data) {
+            projectsHubProxy.client.updateProjects = function (data) {
+                var updatedProjects = [];
+
                 $.each(data, function () {
                     var project = ko.mapping.fromJS(this, ProjectMapping);
-                    console.log(project.Name());
-                    console.log(project.Successful());
-                    console.log(project.Failed());
-                    console.log(project.Running());
+                    //console.log(project.Name());
+                    //console.log(project.Successful());
+                    //console.log(project.Failed());
+                    //console.log(project.Running());
 
                     var match = ko.utils.arrayFirst(vm.projects(), function(item) {
                         return project.Id() === item.Id();
                     });
 
                     if (!match) {
-                        vm.projects.push(project);
+                        vm.addProject(project);
                     } else {
                         ko.mapping.fromJS(this, match);
                     }
-                });
-            };
 
-            projectsHubProxy.client.removeProject = function(data) {
-                var project = ko.mapping.fromJS(data, ProjectMapping);
-                console.log(project.Name());
-
-                var match = ko.utils.arrayFirst(vm.projects(), function(item) {
-                    return project.Id() === item.Id();
+                    updatedProjects.push(project);
                 });
 
-                if (match) {
-                    vm.projects.remove(match);
-                }
+                var toRemove = [];
+
+                ko.utils.arrayForEach(vm.projects(), function (project) {
+                    var match = ko.utils.arrayFirst(updatedProjects, function (item) {
+                        return project.Id() === item.Id();
+                    });
+
+                    if (!match) {
+                        toRemove.push(project);
+                    }
+                });
+
+                ko.utils.arrayForEach(toRemove, function (project) {
+                    console.log(project.Name());
+                    //console.log(project.Successful());
+                    //console.log(project.Failed());
+                    //console.log(project.Running());
+                    vm.removeProject(project);
+                });
             };
 
             function initProjects() {
                 return projectsHubProxy.server.getProjects().done(function(projects) {
                     vm.projects.removeAll();
+
                     $.each(projects, function() {
                         var project = ko.mapping.fromJS(this, ProjectMapping);
-                        console.log(project.Name());
-                        console.log(project.Successful());
-                        console.log(project.Failed());
-                        console.log(project.Running());
+                        //console.log(project.Name());
+                        //console.log(project.Successful());
+                        //console.log(project.Failed());
+                        //console.log(project.Running());
                         vm.addProject(project);
                     });
                 });
@@ -92,12 +104,26 @@
 
         function ProjectsViewModel() {
             var self = this;
-            //self.projects = ko.observableArray([]);
+
             self.projects = ko.mapping.fromJS([]);
 
             self.addProject = function(item) {
                 self.projects.push(item);
             };
+
+            self.removeProject = function (item) {
+                self.projects.remove(item);
+            };
+
+            self.sortFunction = function (a, b) {
+                return a.Name().toLowerCase() > b.Name().toLowerCase()
+                    ? 1
+                    : -1;
+            };
+
+            self.sortedProjects = ko.dependentObservable(function () {
+                return this.projects.slice().sort(this.sortFunction);
+            }, self);
         }
 
         var ProjectMapping = {

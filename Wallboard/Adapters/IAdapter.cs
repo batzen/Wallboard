@@ -1,6 +1,7 @@
 ﻿namespace Batzendev.Wallboard.Adapters
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Batzendev.Wallboard.Models;
 
     public interface IAdapter
@@ -15,6 +16,6 @@
 
         int CacheDuration { get; set; }
 
-        IEnumerable<Project> GetProjects();
+        Task<IEnumerable<Project>> GetProjects();
     }
 }

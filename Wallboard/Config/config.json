@@ -1,4 +1,3 @@
 ﻿{
-    "hubUpdateInterval":  5000,
-    "defaultAdapterCacheDuration": 60000,
+    "hubUpdateInterval":  5000,    
 }

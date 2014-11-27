@@ -10,19 +10,18 @@
     using Newtonsoft.Json;
     using Microsoft.Framework.Runtime;
     using Microsoft.Framework.ConfigurationModel;
+    using System.Threading.Tasks;
 
     public class ProjectsProvider : IProjectsProvider
     {
         private readonly List<IAdapter> adapters = new List<IAdapter>();
 
         private readonly IApplicationEnvironment appEnvironment;
-        private readonly IConfiguration configuration;
         private readonly IServiceProvider serviceProvider;
 
-        public ProjectsProvider(IApplicationEnvironment appEnvironment, IConfiguration configuration, IServiceProvider serviceProvider)
+        public ProjectsProvider(IApplicationEnvironment appEnvironment, IServiceProvider serviceProvider)
         {
             this.appEnvironment = appEnvironment;
-            this.configuration = configuration;
             this.serviceProvider = serviceProvider;
 
             this.InitializeAdapters();
@@ -30,15 +29,15 @@
 
         private void InitializeAdapters()
         {
-            var defaultAdapterCacheDuration = this.configuration.Get<int>("defaultAdapterCacheDuration");
+            var assembly = typeof(ProjectsProvider).GetTypeInfo().Assembly;
+
             var root = JsonConvert.DeserializeObject<AdaptersConfig>(File.ReadAllText(Path.Combine(appEnvironment.ApplicationBasePath, "Config/adapters.json")));
 
             foreach (var adapterConfig in root.adapters.Where(x => x.enabled))
             {
                 var type = Type.GetType(adapterConfig.type)
-                    ?? Assembly.GetExecutingAssembly().GetType(adapterConfig.type)
-                    ?? GetTypeByName(Assembly.GetExecutingAssembly(), adapterConfig.type)
-                    ?? GetTypeByName(adapterConfig.type);
+                    ?? assembly.GetType(adapterConfig.type)
+                    ?? GetTypeByName(assembly, adapterConfig.type);
 
                 var adapter = (IAdapter)this.serviceProvider.GetService(type);
 
@@ -49,26 +48,25 @@
                 adapter.Username = adapterConfig.username;
                 adapter.Password = adapterConfig.password;
                 adapter.CacheDuration = adapterConfig.cacheDuration == 0
-                    ? defaultAdapterCacheDuration
+                    ? root.defaultAdapterCacheDuration
                     : adapterConfig.cacheDuration;
 
                 this.adapters.Add(adapter);
             }
         }
 
-        public IEnumerable<Project> GetProjects()
+        public async Task<IEnumerable<Project>> GetProjects()
         {
-            var projects = this.adapters
-                .SelectMany(x => x.GetProjects());
+            var projects = new List<Project>();
+
+            foreach (var adapter in this.adapters)
+            {
+                projects.AddRange(await adapter.GetProjects());
+            }
 
             return projects
                 .OrderBy(x => x.Name)
                 .ThenByDescending(x => x.Total);
-        }
-
-        //todo: implement caching (cache duration etc.)
-        private void UpdateCaches()
-        {
         }
 
         public static Type GetTypeByName(Assembly assembly, string className)
@@ -76,13 +74,6 @@
             var assemblyTypes = assembly.GetTypes();
 
             return assemblyTypes.FirstOrDefault(assemblyType => assemblyType.Name == className);
-        }
-
-        public static Type GetTypeByName(string className)
-        {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .Select(assembly => GetTypeByName(assembly, className))
-                .FirstOrDefault(type => type != null);
         }
 
         public class AdapterConfig
@@ -93,17 +84,23 @@
             }
 
             public string id { get; set; }
+
             public string url { get; set; }
+
             public string username { get; set; }
+
             public string password { get; set; }
+
             public string type { get; set; }
+
             public bool enabled { get; set; }
+
             public int cacheDuration { get; set; }
         }
 
         public class AdaptersConfig
         {
-            public TimeSpan defaultCacheTimeout { get; set; }
+            public int defaultAdapterCacheDuration { get; set; }
 
             public List<AdapterConfig> adapters { get; set; }
         }

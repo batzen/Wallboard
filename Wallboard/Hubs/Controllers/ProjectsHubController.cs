@@ -1,6 +1,7 @@
 ﻿namespace Batzendev.Wallboard.Hubs.Controllers
 {
-    using System.Timers;
+    using System;
+    using System.Threading;
     using Batzendev.Wallboard.Services;
     using Microsoft.AspNet.SignalR.Hubs;
     using Microsoft.AspNet.SignalR.Infrastructure;
@@ -19,14 +20,12 @@
 
             this.clients = this.Hub.Clients;
 
-            this.updateTimer = new Timer(configuration.Get<int>("hubUpdateInterval"));
-            this.updateTimer.Elapsed += HandleUpdateTimerElapsed;
-            this.updateTimer.Start();
+            this.updateTimer = new Timer(this.HandleUpdateTimerElapsed, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(configuration.Get<int>("hubUpdateInterval")));
         }
 
-        private void HandleUpdateTimerElapsed(object sender, ElapsedEventArgs e)
+        private async void HandleUpdateTimerElapsed(object state)
         {
-            this.clients.All.updateProjects(this.projectsProvider.GetProjects());
+            this.clients.All.updateProjects(await this.projectsProvider.GetProjects());
         }
     }
 }

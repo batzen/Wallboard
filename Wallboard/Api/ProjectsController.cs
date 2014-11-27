@@ -4,6 +4,7 @@
     using Batzendev.Wallboard.Services;
     using Microsoft.AspNet.Mvc;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     [Route("api/projects/[action]")]
     public class ProjectsController : Controller
@@ -16,9 +17,9 @@
         }
 
         [HttpGet]
-        public IEnumerable<Project> Get()
+        public async Task<IEnumerable<Project>> Get()
         {
-            return projectsProvider.GetProjects();
+            return await projectsProvider.GetProjects();
         }
     }
 }

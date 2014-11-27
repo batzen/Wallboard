@@ -2,48 +2,48 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Threading.Tasks;
     using System.Xml.Serialization;
-    using RestSharp;
+    using Newtonsoft.Json;
 
     public class CCTrayAdapter : Adapter
     {
-        protected RestClient RestClient;
+        protected HttpClient RestClient;
 
-        public override IEnumerable<Models.Project> GetProjects()
-        {
+        public override async Task<IEnumerable<Models.Project>> GetProjectsForCache()
+        {            
             if (this.RestClient == null)
             {
                 this.RestClient = this.CreateRestClient();
             }
 
-            var cctrayEntries = this.GetCCTrayEntries();
+            var cctrayEntries = await this.GetCCTrayEntries();
 
             var projects = this.GetProjects(cctrayEntries);
 
             return projects;
         }
 
-        protected virtual RestClient CreateRestClient()
+        protected virtual HttpClient CreateRestClient()
         {
             if (string.IsNullOrWhiteSpace(this.Url))
             {
                 return null;
             }
 
-            var restClient = new RestClient(this.Url);
-
-            if (string.IsNullOrWhiteSpace(this.Username) == false)
-            {
-                restClient.Authenticator = new HttpBasicAuthenticator(this.Username, this.Password);
-            }
-
+            var restClient = new HttpClient();
+            restClient.BaseAddress = new Uri(this.Url);
+            
             return restClient;
         }
 
-        private IReadOnlyList<Project> GetCCTrayEntries()
+        private async Task<IReadOnlyList<Project>> GetCCTrayEntries()
         {
-            var rootObject = this.GetRootObject();
+            var rootObject = await this.GetRootObject();
             var cctrayEntries = rootObject?.Project ?? new List<Project>();
 
             this.AdjustNameAndParent(cctrayEntries);
@@ -51,18 +51,66 @@
             return cctrayEntries;
         }
 
-        protected virtual CCTrayRootObject GetRootObject()
+        protected virtual async Task<CCTrayRootObject> GetRootObject()
         {
             var request = this.GetRequest();
 
-            var response = this.RestClient.Execute<CCTrayRootObject>(request);
+            var response = await this.RestClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);            
 
-            return response.Data;
+            return await this.GetRootObject(response);
         }
 
-        protected virtual RestRequest GetRequest()
+        protected virtual async Task<CCTrayRootObject> GetRootObject(HttpResponseMessage response)
         {
-            var request = new RestRequest();
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var contentType = response.Content.Headers.ContentType;
+
+            switch (contentType.MediaType)
+            {
+                case "application/xml":
+                case "text/javascript":
+                case "text/xml":
+                    return DeserializeXml(content);
+
+                case "application/json":
+                case "text/json":
+                case "text/x-json":
+                    return JsonConvert.DeserializeObject<CCTrayRootObject>(content);
+
+                default:
+                    return JsonConvert.DeserializeObject<CCTrayRootObject>(content);
+            }
+        }
+
+        private static CCTrayRootObject DeserializeXml(string content)
+        {
+            var ser = new XmlSerializer(typeof(CCTrayRootObject));
+
+            using (var sr = new StringReader(content))
+            {
+                var root = (CCTrayRootObject)ser.Deserialize(sr);
+                return root;
+            }
+        }
+
+        protected virtual HttpRequestMessage GetRequest()
+        {
+            var request = new HttpRequestMessage();
+
+            if (string.IsNullOrWhiteSpace(this.Username) == false)
+            {
+                // only add the Authorization parameter if it hasn't been added by a previous Execute 
+                if (!request.Headers.Any(p => p.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Format("{0}:{1}", this.Username, this.Password)));
+                    var authHeader = string.Format("Basic {0}", token);
+
+                    request.Headers.Add("Authorization", authHeader);
+                }
+            }
 
             return request;
         }
@@ -125,24 +173,23 @@
 
         protected virtual bool IsSuccessful(Project entry)
         {
-            return entry.lastBuildStatus.Equals("Success", StringComparison.InvariantCultureIgnoreCase);
+            return entry.lastBuildStatus.Equals("Success", StringComparison.OrdinalIgnoreCase);
         }
 
         protected virtual bool IsFailed(Project entry)
         {
-            return entry.lastBuildStatus.Equals("Failure", StringComparison.InvariantCultureIgnoreCase)
-                || entry.lastBuildStatus.Equals("Exception", StringComparison.InvariantCultureIgnoreCase);
+            return entry.lastBuildStatus.Equals("Failure", StringComparison.OrdinalIgnoreCase)
+                || entry.lastBuildStatus.Equals("Exception", StringComparison.OrdinalIgnoreCase);
         }
 
         protected virtual bool IsRunning(Project entry)
         {
-            return entry.activity.Equals("Building", StringComparison.InvariantCultureIgnoreCase)
-                || entry.activity.Equals("CheckingModifications", StringComparison.InvariantCultureIgnoreCase)
-                || entry.lastBuildStatus.Equals("Pending", StringComparison.InvariantCultureIgnoreCase)
-                || entry.lastBuildStatus.Equals("Unknown", StringComparison.InvariantCultureIgnoreCase);
+            return entry.activity.Equals("Building", StringComparison.OrdinalIgnoreCase)
+                || entry.activity.Equals("CheckingModifications", StringComparison.OrdinalIgnoreCase)
+                || entry.lastBuildStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase)
+                || entry.lastBuildStatus.Equals("Unknown", StringComparison.OrdinalIgnoreCase);
         }
 
-        [Serializable]
         [XmlType("Project")]
         public class Project
         {
@@ -168,7 +215,6 @@
             public string parent { get; set; }
         }
 
-        [Serializable]
         [XmlRoot("Projects")]
         public class CCTrayRootObject
         {

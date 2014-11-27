@@ -6,6 +6,7 @@
     using Batzendev.Wallboard.Services;
     using Microsoft.AspNet.SignalR;
     using Microsoft.AspNet.SignalR.Hubs;
+    using System.Threading.Tasks;
 
     [HubName("projects")]
     public class ProjectsHub : Hub
@@ -17,9 +18,9 @@
             this.projectsProvider = projectsProvider;
         }
 
-        public IEnumerable<Project> GetProjects()
+        public async Task<IEnumerable<Project>> GetProjects()
         {
-            return this.projectsProvider.GetProjects();
+            return await this.projectsProvider.GetProjects();
         }
     }
 }
