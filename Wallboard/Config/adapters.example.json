@@ -1,19 +1,21 @@
-﻿{
-    "defaultCacheTimeout": "60",
+﻿{    
+    "defaultAdapterCacheDuration": 60000,
     "adapters": [
         {
-            "id": "xml-sample",
-            "url": "~/Content/cctray.xml",
-            "username": "",
+            "id": "jetbrains.teamcity",
+            "url": "https://teamcity.jetbrains.com/httpAuth/app/rest/cctray",
+            "username": "guest",
             "password": "",
-            "type": "SampleCCTrayAdapter"
+            "type": "CCTrayAdapter",
+            "enabled": "false"
         },
         {
-            "id": "json-sample",
-            "url": "~/Content/cctray.json",
+            "id": "jenkins",
+            "url": "https://builds.apache.org/cc.xml",
             "username": "",
             "password": "",
-            "type": "SampleCCTrayAdapter"
-        },
+            "type": "CCTrayAdapter",
+            "enabled": "false"
+        }
     ]
 }
