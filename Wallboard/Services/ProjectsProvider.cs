@@ -18,7 +18,9 @@
 
         private readonly IApplicationEnvironment appEnvironment;
         private readonly ILogger logger;
-        private readonly IServiceProvider serviceProvider;        
+        private readonly IServiceProvider serviceProvider;
+        private readonly string configFile;
+        private FileSystemWatcher configFileWatcher;
 
         public ProjectsProvider(IApplicationEnvironment appEnvironment, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
@@ -26,42 +28,56 @@
             this.logger = loggerFactory.Create<ProjectsProvider>();
             this.serviceProvider = serviceProvider;
 
+            this.configFile = Path.GetFullPath(Path.Combine(appEnvironment.ApplicationBasePath, "Config/adapters.json"));
             this.InitializeAdapters();
+
+            this.WatchConfigFile();
         }
 
         private void InitializeAdapters()
         {
-            var assembly = typeof(ProjectsProvider).GetTypeInfo().Assembly;
-
-            var root = JsonConvert.DeserializeObject<AdaptersConfig>(File.ReadAllText(Path.Combine(appEnvironment.ApplicationBasePath, "Config/adapters.json")));
-
-            foreach (var adapterConfig in root.adapters.Where(x => x.enabled))
+            lock (this.adapters)
             {
-                var type = Type.GetType(adapterConfig.type)
-                    ?? assembly.GetType(adapterConfig.type)
-                    ?? GetTypeByName(assembly, adapterConfig.type);
+                this.adapters.Clear();
 
-                var adapter = (IAdapter)this.serviceProvider.GetService(type);
+                var assembly = typeof(ProjectsProvider).GetTypeInfo().Assembly;
 
-                adapter.Id = string.IsNullOrWhiteSpace(adapterConfig.id)
-                    ? Guid.NewGuid().ToString()
-                    : adapterConfig.id;
-                adapter.Url = adapterConfig.url;
-                adapter.Username = adapterConfig.username;
-                adapter.Password = adapterConfig.password;
-                adapter.CacheDuration = adapterConfig.cacheDuration == 0
-                    ? root.defaultAdapterCacheDuration
-                    : adapterConfig.cacheDuration;
+                var configRoot = JsonConvert.DeserializeObject<AdaptersConfig>(File.ReadAllText(this.configFile));
 
-                this.adapters.Add(adapter);
+                foreach (var adapterConfig in configRoot.adapters.Where(x => x.enabled))
+                {
+                    IAdapter adapter = CreateAdapter(assembly, configRoot, adapterConfig);
+
+                    this.adapters.Add(adapter);
+                }
             }
+        }
+
+        private IAdapter CreateAdapter(Assembly assembly, AdaptersConfig configRoot, AdapterConfig adapterConfig)
+        {
+            var type = Type.GetType(adapterConfig.type)
+                ?? assembly.GetType(adapterConfig.type)
+                ?? GetTypeByName(assembly, adapterConfig.type);
+
+            var adapter = (IAdapter)this.serviceProvider.GetService(type);
+
+            adapter.Id = string.IsNullOrWhiteSpace(adapterConfig.id)
+                ? Guid.NewGuid().ToString()
+                : adapterConfig.id;
+            adapter.Url = adapterConfig.url;
+            adapter.Username = adapterConfig.username;
+            adapter.Password = adapterConfig.password;
+            adapter.CacheDuration = adapterConfig.cacheDuration == 0
+                ? configRoot.defaultAdapterCacheDuration
+                : adapterConfig.cacheDuration;
+            return adapter;
         }
 
         public async Task<IEnumerable<Project>> GetProjects()
         {
             var projects = new List<Project>();
 
-            foreach (var adapter in this.adapters)
+            foreach (var adapter in this.GetAdapters())
             {
                 try
                 {
@@ -78,11 +94,38 @@
                 .ThenByDescending(x => x.Total);
         }
 
+        private List<IAdapter> GetAdapters()
+        {
+            lock (this.adapters)
+            {
+                return this.adapters.ToList();
+            }
+        }
+
         public static Type GetTypeByName(Assembly assembly, string className)
         {
             var assemblyTypes = assembly.GetTypes();
 
             return assemblyTypes.FirstOrDefault(assemblyType => assemblyType.Name == className);
+        }
+
+        private void WatchConfigFile()
+        {
+            this.configFileWatcher = new FileSystemWatcher(Path.GetDirectoryName(this.configFile));
+
+            this.configFileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size;
+
+            this.configFileWatcher.Changed += this.HandleConfigFileWatcher_Changed;
+
+            this.configFileWatcher.EnableRaisingEvents = true;
+        }
+
+        private void HandleConfigFileWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            if (e.FullPath.StartsWith(this.configFile, StringComparison.OrdinalIgnoreCase))
+            {
+                this.InitializeAdapters();
+            }
         }
 
         public class AdapterConfig
