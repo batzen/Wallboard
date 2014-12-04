@@ -9,19 +9,21 @@
     using Batzendev.Wallboard.Models;
     using Newtonsoft.Json;
     using Microsoft.Framework.Runtime;
-    using Microsoft.Framework.ConfigurationModel;
     using System.Threading.Tasks;
+    using Microsoft.Framework.Logging;
 
     public class ProjectsProvider : IProjectsProvider
     {
         private readonly List<IAdapter> adapters = new List<IAdapter>();
 
         private readonly IApplicationEnvironment appEnvironment;
-        private readonly IServiceProvider serviceProvider;
+        private readonly ILogger logger;
+        private readonly IServiceProvider serviceProvider;        
 
-        public ProjectsProvider(IApplicationEnvironment appEnvironment, IServiceProvider serviceProvider)
+        public ProjectsProvider(IApplicationEnvironment appEnvironment, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
             this.appEnvironment = appEnvironment;
+            this.logger = loggerFactory.Create<ProjectsProvider>();
             this.serviceProvider = serviceProvider;
 
             this.InitializeAdapters();
@@ -61,7 +63,14 @@
 
             foreach (var adapter in this.adapters)
             {
-                projects.AddRange(await adapter.GetProjects());
+                try
+                {
+                    projects.AddRange(await adapter.GetProjects());
+                }
+                catch (Exception exception)
+                {
+                    this.logger.WriteError(string.Format("Error while retrieving projects from {0}", adapter.Url), exception);
+                }
             }
 
             return projects
