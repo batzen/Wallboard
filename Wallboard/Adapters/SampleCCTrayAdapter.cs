@@ -6,6 +6,7 @@
     using Microsoft.Framework.Runtime;
     using System.Threading.Tasks;
     using System.Net.Http;
+    using Batzendev.Wallboard.Models.CCTray;
 
     public class SampleCCTrayAdapter : CCTrayAdapter
     {

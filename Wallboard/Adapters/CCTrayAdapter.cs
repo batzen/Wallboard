@@ -9,6 +9,7 @@
     using System.Threading.Tasks;
     using System.Xml.Serialization;
     using Newtonsoft.Json;
+    using Batzendev.Wallboard.Models.CCTray;
 
     public class CCTrayAdapter : Adapter
     {
@@ -41,10 +42,10 @@
             return restClient;
         }
 
-        private async Task<IReadOnlyList<Project>> GetCCTrayEntries()
+        private async Task<IReadOnlyList<CCTrayProject>> GetCCTrayEntries()
         {
             var rootObject = await this.GetRootObject();
-            var cctrayEntries = rootObject?.Project ?? new List<Project>();
+            var cctrayEntries = rootObject?.Project ?? new List<CCTrayProject>();
 
             this.AdjustNameAndParent(cctrayEntries);
 
@@ -53,7 +54,7 @@
 
         protected virtual async Task<CCTrayRootObject> GetRootObject()
         {
-            var request = this.GetRequest();
+            var request = this.CreateRequest();
 
             var response = await this.RestClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);            
 
@@ -96,7 +97,7 @@
             }
         }
 
-        protected virtual HttpRequestMessage GetRequest()
+        protected virtual HttpRequestMessage CreateRequest()
         {
             var request = new HttpRequestMessage();
 
@@ -115,7 +116,7 @@
             return request;
         }
 
-        protected void AdjustNameAndParent(IReadOnlyList<Project> cctrayEntries)
+        protected void AdjustNameAndParent(IReadOnlyList<CCTrayProject> cctrayEntries)
         {
             foreach (var cctrayEntry in cctrayEntries)
             {
@@ -130,14 +131,14 @@
             }
         }
 
-        protected virtual IEnumerable<Models.Project> GetProjects(IReadOnlyList<Project> cctrayEntries)
+        protected virtual IEnumerable<Models.Project> GetProjects(IReadOnlyList<CCTrayProject> cctrayEntries)
         {
             var entriesWithParent = cctrayEntries.Where(x => string.IsNullOrWhiteSpace(x.parent) == false)
                 .GroupBy(x => x.parent);
 
             foreach (var group in entriesWithParent)
             {
-                var project = this.GetProject(group.Key, @group.ToArray());
+                var project = this.CreateProject(group.Key, @group.ToArray());
 
                 yield return project;
             }
@@ -146,13 +147,13 @@
 
             foreach (var cctrayEntry in entriesWithoutParent)
             {
-                var project = this.GetProject(cctrayEntry.name, new[] { cctrayEntry });
+                var project = this.CreateProject(cctrayEntry.name, new[] { cctrayEntry });
 
                 yield return project;
             }
         }
 
-        private Models.Project GetProject(string name, IList<Project> cctrayEntries)
+        protected virtual Models.Project CreateProject(string name, IList<CCTrayProject> cctrayEntries)
         {
             var project = new Models.Project
             {
@@ -171,55 +172,23 @@
             return string.Format("{0}.{1}", this.Id, key);
         }
 
-        protected virtual bool IsSuccessful(Project entry)
+        protected virtual bool IsSuccessful(CCTrayProject entry)
         {
             return entry.lastBuildStatus.Equals("Success", StringComparison.OrdinalIgnoreCase);
         }
 
-        protected virtual bool IsFailed(Project entry)
+        protected virtual bool IsFailed(CCTrayProject entry)
         {
             return entry.lastBuildStatus.Equals("Failure", StringComparison.OrdinalIgnoreCase)
                 || entry.lastBuildStatus.Equals("Exception", StringComparison.OrdinalIgnoreCase);
         }
 
-        protected virtual bool IsRunning(Project entry)
+        protected virtual bool IsRunning(CCTrayProject entry)
         {
             return entry.activity.Equals("Building", StringComparison.OrdinalIgnoreCase)
                 || entry.activity.Equals("CheckingModifications", StringComparison.OrdinalIgnoreCase)
                 || entry.lastBuildStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase)
                 || entry.lastBuildStatus.Equals("Unknown", StringComparison.OrdinalIgnoreCase);
-        }
-
-        [XmlType("Project")]
-        public class Project
-        {
-            [XmlAttribute("webUrl")]
-            public string webUrl { get; set; }
-
-            [XmlAttribute("lastBuildLabel")]
-            public string lastBuildLabel { get; set; }
-
-            [XmlAttribute("lastBuildTime")]
-            public string lastBuildTime { get; set; }
-
-            [XmlAttribute("lastBuildStatus")]
-            public string lastBuildStatus { get; set; }
-
-            [XmlAttribute("activity")]
-            public string activity { get; set; }
-
-            [XmlAttribute("name")]
-            public string name { get; set; }
-
-            [XmlIgnore]
-            public string parent { get; set; }
-        }
-
-        [XmlRoot("Projects")]
-        public class CCTrayRootObject
-        {
-            [XmlElement("Project", typeof(Project))]
-            public List<Project> Project { get; set; }
         }
     }
 }
